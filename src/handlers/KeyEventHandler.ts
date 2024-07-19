@@ -15,5 +15,5 @@ export function handleKeyEvent(event: KeyboardEvent): void {
   }
   if (event.altKey) modifiers.push("Alt");
 
-  manager.executeShortcut(keyCode, modifiers);
+  manager.executeShortcut(keyCode, modifiers, event);
 }

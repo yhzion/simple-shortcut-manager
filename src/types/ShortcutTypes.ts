@@ -7,6 +7,7 @@ export interface Shortcut {
   name: string;
   description?: string;
   context?: string;
+  preventDefault?: boolean;
 }
 
 export interface ShortcutGroup {

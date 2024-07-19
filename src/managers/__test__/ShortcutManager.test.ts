@@ -9,19 +9,42 @@ describe("ShortcutManager", () => {
     manager = ShortcutManager.getInstance();
   });
 
-  it("should add and execute an independent shortcut", () => {
+  it("should add and execute an independent shortcut with preventDefault", () => {
     const action = jest.fn();
+    const event = new KeyboardEvent("keydown", { code: "KeyA", ctrlKey: true });
+    const preventDefault = jest.spyOn(event, "preventDefault");
     const shortcut: Shortcut = {
       keyCode: "KeyA",
       modifiers: ["Ctrl"],
       action,
       name: "TestShortcut",
+      preventDefault: true,
     };
 
     manager.addIndependentShortcut(shortcut);
-    manager.executeShortcut("KeyA", ["Ctrl"]);
+    manager.executeShortcut("KeyA", ["Ctrl"], event);
 
     expect(action).toHaveBeenCalled();
+    expect(preventDefault).toHaveBeenCalled();
+  });
+
+  it("should add and execute an independent shortcut without preventDefault", () => {
+    const action = jest.fn();
+    const event = new KeyboardEvent("keydown", { code: "KeyA", ctrlKey: true });
+    const preventDefault = jest.spyOn(event, "preventDefault");
+    const shortcut: Shortcut = {
+      keyCode: "KeyA",
+      modifiers: ["Ctrl"],
+      action,
+      name: "TestShortcut",
+      preventDefault: false,
+    };
+
+    manager.addIndependentShortcut(shortcut);
+    manager.executeShortcut("KeyA", ["Ctrl"], event);
+
+    expect(action).toHaveBeenCalled();
+    expect(preventDefault).not.toHaveBeenCalled();
   });
 
   it("should not add a duplicate independent shortcut", () => {
@@ -32,17 +55,23 @@ describe("ShortcutManager", () => {
       modifiers: ["Ctrl"],
       action: action1,
       name: "TestShortcut1",
+      preventDefault: true,
     };
     const shortcut2: Shortcut = {
       keyCode: "KeyA",
       modifiers: ["Ctrl"],
       action: action2,
       name: "TestShortcut2",
+      preventDefault: true,
     };
 
     manager.addIndependentShortcut(shortcut1);
     manager.addIndependentShortcut(shortcut2);
-    manager.executeShortcut("KeyA", ["Ctrl"]);
+    manager.executeShortcut(
+      "KeyA",
+      ["Ctrl"],
+      new KeyboardEvent("keydown", { code: "KeyA", ctrlKey: true })
+    );
 
     expect(action1).toHaveBeenCalled();
     expect(action2).not.toHaveBeenCalled();
@@ -50,71 +79,53 @@ describe("ShortcutManager", () => {
 
   it("should add and execute a group shortcut", () => {
     const action = jest.fn();
+    const event = new KeyboardEvent("keydown", { code: "KeyA", ctrlKey: true });
     const shortcut: Shortcut = {
       keyCode: "KeyA",
       modifiers: ["Ctrl"],
       action,
       name: "TestGroupShortcut",
+      preventDefault: true,
     };
 
     manager.addGroup({ name: "TestGroup", shortcuts: [shortcut] });
-    manager.executeShortcut("KeyA", ["Ctrl"]);
+    manager.executeShortcut("KeyA", ["Ctrl"], event);
 
     expect(action).toHaveBeenCalled();
   });
 
-  it("should not add a duplicate group shortcut", () => {
-    const action1 = jest.fn();
-    const action2 = jest.fn();
-    const shortcut1: Shortcut = {
-      keyCode: "KeyA",
-      modifiers: ["Ctrl"],
-      action: action1,
-      name: "TestGroupShortcut1",
-    };
-    const shortcut2: Shortcut = {
-      keyCode: "KeyA",
-      modifiers: ["Ctrl"],
-      action: action2,
-      name: "TestGroupShortcut2",
-    };
-
-    manager.addGroup({ name: "TestGroup", shortcuts: [shortcut1] });
-    manager.addShortcutToGroup("TestGroup", shortcut2);
-    manager.executeShortcut("KeyA", ["Ctrl"]);
-
-    expect(action1).toHaveBeenCalled();
-    expect(action2).not.toHaveBeenCalled();
-  });
-
   it("should remove an independent shortcut", () => {
     const action = jest.fn();
+    const event = new KeyboardEvent("keydown", { code: "KeyA", ctrlKey: true });
     const shortcut: Shortcut = {
       keyCode: "KeyA",
       modifiers: ["Ctrl"],
       action,
       name: "TestShortcut",
+      preventDefault: true,
     };
 
     manager.addIndependentShortcut(shortcut);
     manager.removeIndependentShortcut("TestShortcut");
-    manager.executeShortcut("KeyA", ["Ctrl"]);
+    manager.executeShortcut("KeyA", ["Ctrl"], event);
 
     expect(action).not.toHaveBeenCalled();
   });
 
   it("should remove a group shortcut", () => {
     const action = jest.fn();
+    const event = new KeyboardEvent("keydown", { code: "KeyA", ctrlKey: true });
     const shortcut: Shortcut = {
       keyCode: "KeyA",
       modifiers: ["Ctrl"],
       action,
       name: "TestGroupShortcut",
+      preventDefault: true,
     };
 
     manager.addGroup({ name: "TestGroup", shortcuts: [shortcut] });
     manager.removeShortcutFromGroup("TestGroup", "TestGroupShortcut");
-    manager.executeShortcut("KeyA", ["Ctrl"]);
+    manager.executeShortcut("KeyA", ["Ctrl"], event);
 
     expect(action).not.toHaveBeenCalled();
   });

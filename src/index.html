@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shortcut Manager Demo</title>
+    <style>
+      #message {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        padding: 10px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: white;
+        border-radius: 5px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Shortcut Manager Demo</h1>
+    <form id="shortcut-form">
+      <label for="key">Key:</label>
+      <input type="text" id="key" name="key" required />
+      <label for="modifiers">Modifiers:</label>
+      <input
+        type="text"
+        id="modifiers"
+        name="modifiers"
+        placeholder="Ctrl, Shift, Alt, Meta"
+      />
+      <label for="group">Group:</label>
+      <input type="text" id="group" name="group" />
+      <button type="submit">Add Shortcut</button>
+    </form>
+
+    <h2>Registered Shortcuts</h2>
+    <div id="shortcuts-list"></div>
+
+    <div id="message"></div>
+
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>
