@@ -20,6 +20,7 @@ form {
   background: #fff;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
+  position: relative;
 }
 label {
   margin-bottom: 5px;
@@ -80,5 +81,11 @@ th {
   background-color: rgba(0, 0, 0, 0.8);
   color: white;
   border-radius: 5px;
+  display: none;
+}
+.warning {
+  color: red;
+  font-weight: bold;
+  margin-top: 10px;
   display: none;
 }

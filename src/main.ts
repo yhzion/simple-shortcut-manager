@@ -3,6 +3,7 @@ import { handleKeyEvent } from "./handlers/KeyEventHandler";
 import type { Shortcut } from "./types/ShortcutTypes";
 
 const manager = ShortcutManager.getInstance();
+let selectedShortcut: Shortcut | null = null;
 
 function initialize() {
   const independentShortcuts: Shortcut[] = [
@@ -194,51 +195,132 @@ function initialize() {
 
       const nameInput = document.getElementById("name") as HTMLInputElement;
       const keyInput = document.getElementById("key") as HTMLInputElement;
-      const modifiersInput = document.getElementById(
-        "modifiers"
-      ) as HTMLInputElement;
       const groupInput = document.getElementById("group") as HTMLInputElement;
       const descriptionInput = document.getElementById(
         "description"
       ) as HTMLInputElement;
+      const warningMessage = document.getElementById(
+        "warning-message"
+      ) as HTMLDivElement;
 
       const name = nameInput.value.trim();
-      const key = keyInput.value.toUpperCase();
-      const modifiers = modifiersInput.value
-        .split(",")
-        .map((mod) => mod.trim()) as Array<"Shift" | "Ctrl" | "Alt" | "Meta">;
+      const key = `Key${keyInput.value.toUpperCase()}`;
+      const modifiers = Array.from(
+        document.querySelectorAll('input[name="modifiers"]:checked')
+      ).map((input) => (input as HTMLInputElement).value) as Array<
+        "Shift" | "Ctrl" | "Alt" | "Meta"
+      >;
       const group = groupInput.value.trim();
       const description = descriptionInput.value.trim();
 
       const shortcut: Shortcut = {
-        keyCode: `Key${key}`,
+        keyCode: key,
         modifiers,
         action: () => {
-          showMessage(name, description, `${modifiers.join("+")}+${key}`);
+          showMessage(
+            name,
+            description,
+            `${modifiers.join("+")}+${key.replace("Key", "")}`
+          );
         },
         name,
         description,
         preventDefault: true,
       };
 
-      if (group) {
-        manager.addShortcutToGroup(group, shortcut);
+      if (isDuplicateShortcut(shortcut)) {
+        warningMessage.textContent = "This shortcut is already registered.";
+        (warningMessage as HTMLElement).style.display = "block";
       } else {
-        manager.addIndependentShortcut(shortcut);
-      }
+        (warningMessage as HTMLElement).style.display = "none";
+        if (group) {
+          manager.addShortcutToGroup(group, shortcut);
+        } else {
+          manager.addIndependentShortcut(shortcut);
+        }
 
-      updateShortcutList();
-      nameInput.value = "";
-      keyInput.value = "";
-      modifiersInput.value = "";
-      groupInput.value = "";
-      descriptionInput.value = "";
+        updateShortcutList();
+        resetForm();
+      }
+    });
+
+  document
+    .getElementById("update-button")
+    ?.addEventListener("click", (event) => {
+      event.preventDefault();
+
+      if (selectedShortcut) {
+        const nameInput = document.getElementById("name") as HTMLInputElement;
+        const keyInput = document.getElementById("key") as HTMLInputElement;
+        const groupInput = document.getElementById("group") as HTMLInputElement;
+        const descriptionInput = document.getElementById(
+          "description"
+        ) as HTMLInputElement;
+
+        // Remove the old shortcut
+        removeShortcut(selectedShortcut);
+
+        // Update the selected shortcut with new values
+        selectedShortcut.name = nameInput.value.trim();
+        selectedShortcut.keyCode = `Key${keyInput.value.toUpperCase()}`;
+        selectedShortcut.modifiers = Array.from(
+          document.querySelectorAll('input[name="modifiers"]:checked')
+        ).map((input) => (input as HTMLInputElement).value) as Array<
+          "Shift" | "Ctrl" | "Alt" | "Meta"
+        >;
+        selectedShortcut.description = descriptionInput.value.trim();
+        selectedShortcut.action = () => {
+          showMessage(
+            selectedShortcut!.name,
+            selectedShortcut!.description || "",
+            `${
+              selectedShortcut!.modifiers?.join("+") || ""
+            }+${selectedShortcut!.keyCode.replace("Key", "")}`
+          );
+        };
+
+        // Add the updated shortcut back
+        if (groupInput.value.trim()) {
+          manager.addShortcutToGroup(groupInput.value.trim(), selectedShortcut);
+        } else {
+          manager.addIndependentShortcut(selectedShortcut);
+        }
+
+        updateShortcutList();
+        resetForm();
+      }
     });
 
   window.addEventListener("keydown", (event) => {
     handleKeyEvent(event);
   });
+
   updateShortcutList();
+}
+
+function isDuplicateShortcut(newShortcut: Shortcut): boolean {
+  const shortcuts = manager["independentShortcuts"].concat(
+    manager["groups"].flatMap((group) => group.shortcuts)
+  );
+  return shortcuts.some(
+    (shortcut) =>
+      shortcut.keyCode === newShortcut.keyCode &&
+      JSON.stringify(shortcut.modifiers) ===
+        JSON.stringify(newShortcut.modifiers) &&
+      shortcut !== selectedShortcut // Exclude the selected shortcut when checking for duplicates
+  );
+}
+
+function removeShortcut(shortcut: Shortcut) {
+  // Remove the shortcut from the independent shortcuts list
+  manager["independentShortcuts"] = manager["independentShortcuts"].filter(
+    (s) => s !== shortcut
+  );
+
+  // Remove the shortcut from any group it belongs to
+  manager["groups"].forEach((group) => {
+    group.shortcuts = group.shortcuts.filter((s) => s !== shortcut);
+  });
 }
 
 function updateShortcutList() {
@@ -260,6 +342,7 @@ function updateShortcutList() {
                 <th>Name</th>
                 <th>Shortcut</th>
                 <th>Description</th>
+                <th>Actions</th>
             </tr>
         `;
 
@@ -269,6 +352,9 @@ function updateShortcutList() {
                 <td>${shortcut.name}</td>
                 <td>${formatShortcut(shortcut.keyCode, shortcut.modifiers)}</td>
                 <td>${shortcut.description || ""}</td>
+                <td><button type="button" onclick="editShortcut('${
+                  shortcut.name
+                }')">Edit</button></td>
             `;
       tbody.appendChild(row);
     });
@@ -292,6 +378,7 @@ function updateShortcutList() {
                 <th>Name</th>
                 <th>Shortcut</th>
                 <th>Description</th>
+                <th>Actions</th>
             </tr>
         `;
 
@@ -301,6 +388,9 @@ function updateShortcutList() {
                 <td>${shortcut.name}</td>
                 <td>${formatShortcut(shortcut.keyCode, shortcut.modifiers)}</td>
                 <td>${shortcut.description || ""}</td>
+                <td><button type="button" onclick="editShortcut('${
+                  shortcut.name
+                }')">Edit</button></td>
             `;
       tbody.appendChild(row);
     });
@@ -330,10 +420,80 @@ function formatShortcut(
 function showMessage(name: string, description: string, trigger: string) {
   const messageDiv = document.getElementById("message") as HTMLDivElement;
   messageDiv.innerHTML = `<strong>${name}</strong><br>Description: ${description}<br>Triggered: ${trigger}`;
-  messageDiv.style.display = "block";
+  (messageDiv as HTMLElement).style.display = "block";
   setTimeout(() => {
-    messageDiv.style.display = "none";
+    (messageDiv as HTMLElement).style.display = "none";
   }, 3000);
+}
+
+(window as any).editShortcut = function (name: string) {
+  const shortcuts = manager["independentShortcuts"].concat(
+    manager["groups"].flatMap((group) => group.shortcuts)
+  );
+  const shortcut = shortcuts.find((s) => s.name === name);
+
+  if (shortcut) {
+    selectedShortcut = shortcut;
+
+    const nameInput = document.getElementById("name") as HTMLInputElement;
+    const keyInput = document.getElementById("key") as HTMLInputElement;
+    const groupInput = document.getElementById("group") as HTMLInputElement;
+    const descriptionInput = document.getElementById(
+      "description"
+    ) as HTMLInputElement;
+
+    nameInput.value = shortcut.name;
+    keyInput.value = shortcut.keyCode.replace("Key", "");
+    groupInput.value =
+      manager["groups"].find((group) => group.shortcuts.includes(shortcut))
+        ?.name || "";
+    descriptionInput.value = shortcut.description || "";
+
+    (
+      document.querySelectorAll(
+        'input[name="modifiers"]'
+      ) as NodeListOf<HTMLInputElement>
+    ).forEach((input) => {
+      input.checked = shortcut.modifiers
+        ? shortcut.modifiers.includes(
+            input.value as "Shift" | "Ctrl" | "Alt" | "Meta"
+          )
+        : false;
+    });
+
+    (document.getElementById("update-button") as HTMLElement).style.display =
+      "inline-block";
+    (
+      document.querySelector('button[type="submit"]') as HTMLElement
+    ).style.display = "none";
+  }
+};
+
+function resetForm() {
+  selectedShortcut = null;
+
+  const nameInput = document.getElementById("name") as HTMLInputElement;
+  const keyInput = document.getElementById("key") as HTMLInputElement;
+  const groupInput = document.getElementById("group") as HTMLInputElement;
+  const descriptionInput = document.getElementById(
+    "description"
+  ) as HTMLInputElement;
+
+  nameInput.value = "";
+  keyInput.value = "";
+  (
+    document.querySelectorAll(
+      'input[name="modifiers"]'
+    ) as NodeListOf<HTMLInputElement>
+  ).forEach((input) => (input.checked = false));
+  groupInput.value = "";
+  descriptionInput.value = "";
+
+  (document.getElementById("update-button") as HTMLElement).style.display =
+    "none";
+  (
+    document.querySelector('button[type="submit"]') as HTMLElement
+  ).style.display = "inline-block";
 }
 
 initialize();

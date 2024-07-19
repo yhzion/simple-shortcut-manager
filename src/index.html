@@ -14,17 +14,23 @@
       <label for="key">Key:</label>
       <input type="text" id="key" name="key" required />
       <label for="modifiers">Modifiers:</label>
-      <input
-        type="text"
-        id="modifiers"
-        name="modifiers"
-        placeholder="Ctrl, Shift, Alt, Meta"
-      />
+      <div>
+        <input type="checkbox" id="ctrl" name="modifiers" value="Ctrl" />
+        <label for="ctrl">Ctrl/Meta</label>
+        <input type="checkbox" id="alt" name="modifiers" value="Alt" />
+        <label for="alt">Alt</label>
+        <input type="checkbox" id="shift" name="modifiers" value="Shift" />
+        <label for="shift">Shift</label>
+      </div>
       <label for="group">Group:</label>
       <input type="text" id="group" name="group" />
       <label for="description">Description:</label>
       <input type="text" id="description" name="description" />
       <button type="submit">Add Shortcut</button>
+      <button type="button" id="update-button" style="display: none">
+        Update Shortcut
+      </button>
+      <div id="warning-message" class="warning"></div>
     </form>
 
     <h2>Registered Shortcuts</h2>
