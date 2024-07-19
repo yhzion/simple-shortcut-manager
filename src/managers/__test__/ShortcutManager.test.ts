@@ -5,9 +5,8 @@ describe("ShortcutManager", () => {
   let manager: ShortcutManager;
 
   beforeEach(() => {
+    ShortcutManager.reset(); // 인스턴스를 재설정
     manager = ShortcutManager.getInstance();
-    manager["groups"] = [];
-    manager["independentShortcuts"] = [];
   });
 
   it("should add and execute an independent shortcut", () => {
@@ -25,6 +24,30 @@ describe("ShortcutManager", () => {
     expect(action).toHaveBeenCalled();
   });
 
+  it("should not add a duplicate independent shortcut", () => {
+    const action1 = jest.fn();
+    const action2 = jest.fn();
+    const shortcut1: Shortcut = {
+      keyCode: "KeyA",
+      modifiers: ["Ctrl"],
+      action: action1,
+      name: "TestShortcut1",
+    };
+    const shortcut2: Shortcut = {
+      keyCode: "KeyA",
+      modifiers: ["Ctrl"],
+      action: action2,
+      name: "TestShortcut2",
+    };
+
+    manager.addIndependentShortcut(shortcut1);
+    manager.addIndependentShortcut(shortcut2);
+    manager.executeShortcut("KeyA", ["Ctrl"]);
+
+    expect(action1).toHaveBeenCalled();
+    expect(action2).not.toHaveBeenCalled();
+  });
+
   it("should add and execute a group shortcut", () => {
     const action = jest.fn();
     const shortcut: Shortcut = {
@@ -38,6 +61,30 @@ describe("ShortcutManager", () => {
     manager.executeShortcut("KeyA", ["Ctrl"]);
 
     expect(action).toHaveBeenCalled();
+  });
+
+  it("should not add a duplicate group shortcut", () => {
+    const action1 = jest.fn();
+    const action2 = jest.fn();
+    const shortcut1: Shortcut = {
+      keyCode: "KeyA",
+      modifiers: ["Ctrl"],
+      action: action1,
+      name: "TestGroupShortcut1",
+    };
+    const shortcut2: Shortcut = {
+      keyCode: "KeyA",
+      modifiers: ["Ctrl"],
+      action: action2,
+      name: "TestGroupShortcut2",
+    };
+
+    manager.addGroup({ name: "TestGroup", shortcuts: [shortcut1] });
+    manager.addShortcutToGroup("TestGroup", shortcut2);
+    manager.executeShortcut("KeyA", ["Ctrl"]);
+
+    expect(action1).toHaveBeenCalled();
+    expect(action2).not.toHaveBeenCalled();
   });
 
   it("should remove an independent shortcut", () => {

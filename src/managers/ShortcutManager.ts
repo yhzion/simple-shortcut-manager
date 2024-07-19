@@ -30,14 +30,18 @@ class ShortcutManager {
   public addShortcutToGroup(groupName: string, shortcut: Shortcut): void {
     const group = this.groups.find((g) => g.name === groupName);
     if (group) {
-      group.shortcuts.push(shortcut);
+      if (!this.isDuplicateShortcut(shortcut, group.shortcuts)) {
+        group.shortcuts.push(shortcut);
+      }
     } else {
       this.groups.push({ name: groupName, shortcuts: [shortcut] });
     }
   }
 
   public addIndependentShortcut(shortcut: Shortcut): void {
-    this.independentShortcuts.push(shortcut);
+    if (!this.isDuplicateShortcut(shortcut, this.independentShortcuts)) {
+      this.independentShortcuts.push(shortcut);
+    }
   }
 
   public removeGroup(groupName: string): void {
@@ -86,6 +90,17 @@ class ShortcutManager {
         }
       }
     }
+  }
+
+  private isDuplicateShortcut(
+    shortcut: Shortcut,
+    shortcuts: Shortcut[]
+  ): boolean {
+    return shortcuts.some(
+      (sc) =>
+        sc.keyCode === shortcut.keyCode &&
+        checkModifiers(sc.modifiers, shortcut.modifiers)
+    );
   }
 }
 
